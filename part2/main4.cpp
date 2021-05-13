@@ -14,11 +14,13 @@ IOQueue Q[NUM_THREADS];
 std::atomic_int finished_threads(0);
 set <int> unfinished_threads;  // an array of tids
 
-bool do_work(float* result, int tid, int* power, int chunk_size, int start) {
-    if (Q[tid].deq_32(&power[start]) == 1) return false;  // get the new values
-    for (int i=start; i<start+chunk_size; ++i) {
-        for (int w = 0; w < power[i] - 1; w++) {
-            result[i] = result[i] * result[i];
+bool do_work(float* result, int tid, int* power) {
+    int i[32];
+    if (Q[tid].deq_32(i) == 1) return false;  // get the new values
+    for (int j=0; j<32; ++j) {
+//        for (int w = 0; w < power[i] - 1; w++) {
+        for (int w = 0; w < power[i[j]] - 1; w++) {
+            result[i[j]] = result[i[j]] * result[i[j]];
         }
     }
     return true;
@@ -43,16 +45,13 @@ void parallel_pow(float *result, int *power, int size, int tid, int num_threads)
 
     // Unlike in main3.cpp, you should deq 32 elements
     // at a time.
-    int chunk_size = size / num_threads;
-    int start = chunk_size * tid;
 
-    while(do_work(result,tid,power, chunk_size, start));
+    while(do_work(result,tid,power));
     unfinished_threads.erase(tid);
     atomic_fetch_add(&finished_threads, 1);
     while(finished_threads.load() < NUM_THREADS) {
         int new_tid = *(unfinished_threads.cbegin());  // for the picking algorithm, I just choose linearly
-        start = chunk_size * new_tid;
-        while(do_work(result,new_tid,power,chunk_size,start));
+        while(do_work(result,new_tid,power));
     }
 }
 
@@ -90,4 +89,5 @@ int main() {
     for (thread &thr : threads) {
         thr.join();
     }
+    threads.clear();
 }

@@ -1,4 +1,5 @@
 #include <atomic>
+#include "iostream"
 
 class IOQueue {
 public:
@@ -10,7 +11,7 @@ public:
     // the size that you need.
     void init(int size) {
         a = new int[size];
-        size = size;
+        s = size;
     }
 
     // enqueue the element e into the queue
@@ -24,7 +25,7 @@ public:
     // from the queue.
     int deq() {
         int index = std::atomic_fetch_add(&tail, 1);
-        if (index > size) return -1;
+        if (index > s) return -1;
         return a[index];
     }
 
@@ -34,9 +35,10 @@ public:
     // return 0 if successful. return 1 if not
     // i.e. if the queue does not have 32 elements
     int deq_32(int ret[32]) {
+        if (head.load() - tail.load() < 32) return 1;
         for (int i = 0;i<32;++i){
             int status = this->deq();
-            if (status == -1) return 1;
+//            if (status == -1) return 1;
             ret[i] = status;
         }
         return 0;
@@ -44,7 +46,7 @@ public:
 
 private:
     int *a;
-    int size;
+    int s;
     std::atomic<int> head;
     std::atomic<int> tail;
 };

@@ -83,4 +83,5 @@ int main() {
     for (thread &thr : threads) {
         thr.join();
     }
+    threads.clear();
 }

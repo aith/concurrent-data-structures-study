@@ -14,28 +14,36 @@ public:
     }
 
     void enq(float e) {
-        bool acquired = false;
-        while (!acquired) {
-            acquired = true;
-            while ((head.load() + 1) % CQUEUE_SIZE == tail.load() % CQUEUE_SIZE);
-            acquired = atomic_compare_exchange_weak(&flag, acquired, false);
-        }
-        int reserved_index = atomic_fetch_add(&head,1) % CQUEUE_SIZE;
+        /* Here's a version for multiple producers and consumers*/
+//        bool acquired = false;
+//        while (!acquired) {
+//            acquired = true;
+//            while ((head.load() + 1) % CQUEUE_SIZE == tail.load() % CQUEUE_SIZE);
+//            acquired = atomic_compare_exchange_weak(&flag, acquired, false);
+//        }
+//        int reserved_index = atomic_fetch_add(&head,1) % CQUEUE_SIZE;
+//        buffer[reserved_index] = e;
+//        flag.store(true);
+
+        /* Here's a version for one producer and one consumer */
+        while ((head.load() + 1) % CQUEUE_SIZE == tail.load() % CQUEUE_SIZE);
+        int reserved_index = atomic_fetch_add(&head, 1) % CQUEUE_SIZE;
         buffer[reserved_index] = e;
-        flag.store(true);
     }
 
     void enq_8(float e[8]) {
         while ((head.load() + 8) % CQUEUE_SIZE == tail.load() % CQUEUE_SIZE);  // Spin while full. This must go first
         for (int i = 0; i < 8; i++) {
-            this->enq(e[i]);
+//            this->enq(e[i]);
+            int reserved_index = atomic_fetch_add(&head, 1) % CQUEUE_SIZE;
+            buffer[reserved_index] = e[i];
         }
     }
 
 
     float deq() {
         while (this->size() == 0);  // Spin while empty
-        int reserved_index = atomic_fetch_add(&tail,1) % CQUEUE_SIZE;
+        int reserved_index = atomic_fetch_add(&tail, 1) % CQUEUE_SIZE;
         return buffer[reserved_index];
     }
 

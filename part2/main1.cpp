@@ -1,6 +1,7 @@
 #include <thread>
 #include "util.h"
 #include "vector"
+#include "iostream"
 
 using namespace std;
 
@@ -12,7 +13,6 @@ void parallel_pow(float *result, int *power, int size, int tid, int num_threads)
     int chunk_size = size / num_threads;
     int start = chunk_size * tid;
     int end = start + chunk_size;
-//    cout << start << " " << end << endl;
     for (int i = start; i < end; i++) {
         for (int w = 0; w < power[i] - 1; w++) {
             result[i] = result[i] * result[i];
